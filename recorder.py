@@ -22,7 +22,7 @@ FORMAT = pyaudio.paInt16
 #--------global para--------
 RATE = 16000
 CHANNELS=2
-CHUNK = 16
+CHUNK = 4
 WIDTH = 2
 FORMAT = pyaudio.paInt16
 duration = 2  # seconds
