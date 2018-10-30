@@ -1,2 +1,2 @@
 # Python Multiple Microphones Recording
-A simple tutorial for multiple microphones recording using python
+A simple script for multiple microphones recording using python
