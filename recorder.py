@@ -9,12 +9,17 @@
 
 import sys
 import pyaudio
-from scipy.io.wavfile import write
+from scipy.io.wavfile import read as scipy_wave_read
 import time
 import csv
+import timeit
 import wave
 import os
 import matplotlib.pyplot as plt
+import cv2
+
+cap = cv2.VideoCapture(1)
+CAPTURE_VIDEO = 1
 
 p = pyaudio.PyAudio()
 FORMAT = pyaudio.paInt16
@@ -27,17 +32,19 @@ WIDTH = 2
 FORMAT = pyaudio.paInt16
 duration = 2  # seconds
 filename_counter = 0
-folder_name="Data"
+folder_name="Training"
+cam_folder_name = "Training_cam"
 buffer_size = 200
 stream_list = []
 #--------global para--------
-
 
 if len(sys.argv)>1:
     folder_name = sys.argv[1]
 subfolder_name = "1030"
 if len(sys.argv)>2:
     subfolder_name = sys.argv[2]
+
+CAM_FOLDER = os.path.join(cam_folder_name, subfolder_name)
 
 def callback(in_data, frame_count, time_info, status):
     return (in_data, pyaudio.paContinue)
@@ -60,6 +67,8 @@ def runCommand(cmand):
         setStartNumber()
     elif cmand == 'r':
         record_utterance()
+    elif cmand == 'plt':
+        show_last_waves()
     else:
         print('Error: Cammand not found!')
 
@@ -80,7 +89,6 @@ def setDuration():
     duration = input('Duration of wave file in seconds (default 2): ')
 
 def record_utterance():
-    global start_number
     global duration
     global RATE
     global CHUNK
@@ -90,20 +98,30 @@ def record_utterance():
     global subfolder_name
     global CHANNELS
     global filename_counter
+    global CAM_FOLDER
+    if not os.path.exists(os.path.join(CAM_FOLDER, str(filename_counter))):
+        os.makedirs(os.path.join(CAM_FOLDER, str(filename_counter)))
     '''
     for j in range(len(stream_list)):
         stream_list[j].start_stream()
     '''
     time.sleep(0.2)
-
+    
     frames = [ [] for _ in range(len(stream_list))]
+    start = timeit.default_timer()
     for i in range(0, int(RATE / CHUNK * duration)):
         for j in range(len(stream_list)):
             #stream_list[j].start_stream()
             data = stream_list[j].read(CHUNK, exception_on_overflow = False)
             #stream_list[j].stop_stream()
             frames[j].append(data)
-    
+        
+        if CAPTURE_VIDEO==1 and i % 400 ==0:
+            record_image(os.path.join(CAM_FOLDER, str(filename_counter)), i//200)
+
+    stop = timeit.default_timer()
+    print('Finished: ', stop - start)
+
     filename = str(filename_counter)+'.wav'
     for i in range(len(stream_list)):
         wf = wave.open(os.path.join(folder_name, subfolder_name, str(i), filename), 'wb')
@@ -118,7 +136,29 @@ def record_utterance():
     '''
     filename_counter += 1
 
+def show_last_waves():
+    global folder_name
+    global subfolder_name
+    if filename_counter==0:
+        print("Record Not Found!")
+        return
+    filename = str(filename_counter-1)+'.wav'
+    for i in range(len(stream_list)):
+        _fs, data = scipy_wave_read(os.path.join(folder_name, subfolder_name, str(i), filename))
+        plt.subplot(int(len(stream_list)*100+10+i+1))
+        plt.plot(data)
 
+    plt.show()
+
+
+
+def record_image(path, frame_index):
+    global cap
+    global CAM_FOLDER
+    _ret, frame = cap.read()
+
+    frame_name = os.path.join(path, str(frame_index)+'.jpg')
+    cv2.imwrite(frame_name, frame)
 
 
 def getDeviceInfo():
@@ -145,6 +185,12 @@ if __name__ == '__main__':
     for i in range(number_of_mics):
         if not os.path.exists(os.path.join(folder_name, subfolder_name,str(i))):
             os.makedirs(os.path.join(folder_name, subfolder_name,str(i)))
+
+    if CAPTURE_VIDEO==1:
+        if not os.path.exists(cam_folder_name):
+            os.makedirs(cam_folder_name)
+        if not os.path.exists(os.path.join(cam_folder_name, subfolder_name)):
+            os.makedirs(os.path.join(cam_folder_name, subfolder_name))
 
     while True:
         try:
