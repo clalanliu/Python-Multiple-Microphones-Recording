@@ -30,7 +30,7 @@ CHANNELS=2
 CHUNK = 4
 WIDTH = 2
 FORMAT = pyaudio.paInt16
-duration = 2  # seconds
+duration = 1.25  # seconds
 filename_counter = 0
 folder_name="Training"
 cam_folder_name = "Training_cam"
@@ -65,10 +65,12 @@ def runCommand(cmand):
         setDuration()
     elif cmand == 'n':
         setStartNumber()
-    elif cmand == 'r':
+    elif cmand == 'r' or cmand == 'p':
         record_utterance()
     elif cmand == 'plt':
         show_last_waves()
+    elif cmand == 'exit':
+        sys.exit()
     else:
         print('Error: Cammand not found!')
 
@@ -76,13 +78,14 @@ def printHelp():
     print('r: Recording n seconds audio')
     print('d: Setting duration for wav file')
     print('n: Setting starting number for filename')
-    print('p: Set whether play after record (1 or 0)')
-    print('ctrl+C: Exit')
+    print('plt: Plot the records')
+    print('exit: Exit')
     print('')
 
 def setStartNumber():
     global filename_counter
     filename_counter = input('Name file starting at? (default 0): ')
+    filename_counter = int(filename_counter)
 
 def setDuration():
     global duration
